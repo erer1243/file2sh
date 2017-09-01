@@ -1,26 +1,26 @@
 #!/bin/bash
 # ensure enough args
-function usage { printf "usage: $0 input-file output-file\n"; exit 1; }
-[ $# -eq 2 ] || usage;
+function usage { printf "usage: $0 input output-file\n"; exit 1; }
+(( $# >= 2 )) || usage;
 
 # ensure input exists & isnt dir
-[ -e $1 ] || ( printf "$1 doesn't exist."; exit 1; )
-[ -d $1 ] && ( printf "$1 is a directory. Cannot convert whole directories. Maybe tarball it?"; exit 1; )
+[ -e $1 ] || { printf "$1 doesn't exist\n"; exit 1; }
+#[ -d $1 ] && { printf "$1 is a directory. Cannot convert whole directories. Maybe tarball it?\n"; exit 1; }
 
 # ensure overwriting is okay
-[ -e $2 ] && ( printf "File $2 already exists. Press [Enter] to overwrite.\n"; read; );
-[ -d $2 ] && ( printf "$2 is a directory. Refusing to overwrite.\n"; exit 1; )
+[ -e $2 ] && { printf "File $2 already exists. Press [Enter] to overwrite.\n"; read; }
+[ -d $2 ] && { printf "$2 is a directory. Refusing to overwrite.\n"; exit 1; }
 
 # create payload
 # start with template
 printf "#!/bin/bash\n\
 # This script can be edited as long as what's here stays in tact \n\
 self=\$(cat \$0) \n\
-echo \${self##*filebegin} | xxd -r -ps > $1 \n\
+echo \${self##*filebegin} | xxd -r -ps | tar -xf - $1 \n\
 chmod $(stat -c %a $1) $1 \n\
 exit \n\
 filebegin\n" > $2
 # append postscript-style hexdump of input-file to payload
-xxd -ps $1 >> $2
+tar -cf - $1 | xxd -ps >> $2
 # make payload executable
 chmod +x $2
